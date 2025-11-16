@@ -1,11 +1,43 @@
+import subprocess
+import sys
+import os
+
+# Автоматическая установка зависимостей
+def install_dependencies():
+    dependencies = [
+        'pyTelegramBotAPI==4.19.1',
+        'requests>=2.31.0'
+    ]
+    
+    for package in dependencies:
+        try:
+            # Проверяем, установлен ли пакет
+            if '==' in package:
+                package_name = package.split('==')[0]
+            else:
+                package_name = package.split('>=')[0]
+            
+            __import__(package_name.replace('-', '_'))
+            print(f"✅ {package_name} уже установлен")
+        except ImportError:
+            print(f"📦 Устанавливаем {package}...")
+            try:
+                subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+                print(f"✅ {package} успешно установлен")
+            except subprocess.CalledProcessError as e:
+                print(f"❌ Ошибка установки {package}: {e}")
+                sys.exit(1)
+
+# Устанавливаем зависимости перед импортом других модулей
+install_dependencies()
+
+# Теперь импортируем остальные модули
 import telebot
 import threading
 import time
 import random
 import json
-import os
-from datetime import datetime, timedelta
-from collections import defaultdict
+from datetime import datetime
 
 # Токен бота
 BOT_TOKEN = "8228625241:AAH0cNP6ggCLsh-8vQF2Jlc8NZCwidRzCLY"
@@ -536,14 +568,17 @@ def start_scheduler():
     scheduler_thread.start()
 
 if __name__ == "__main__":
-    print("🧠 Brainrot Bot запущен!")
+    print("=" * 50)
+    print("🧠 Brainrot Bot запускается...")
+    print("=" * 50)
     print(f"Загружено {len(brainrots)} брейнротов с разными шансами выпадения")
     print(f"Загружено данных {len(user_data)} пользователей")
     print("Бот готов к работе...")
+    print("=" * 50)
     
     start_scheduler()
     
     try:
         bot.infinity_polling()
     except Exception as e:
-        print(f"Ошибка при работе бота: {e}")
+        print(f"❌ Ошибка при работе бота: {e}")
