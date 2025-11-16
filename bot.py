@@ -334,6 +334,15 @@ def calculate_battle_result(brainrot_power, boss_power):
     
     return brainrot_roll > boss_roll, brainrot_roll, boss_roll
 
+def create_action_keyboard():
+    """Создает клавиатуру для выбора действия"""
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(
+        types.InlineKeyboardButton("⚔️ Атаковать", callback_data="action_attack"),
+        types.InlineKeyboardButton("🏳️ Сдаться", callback_data="action_surrender")
+    )
+    return keyboard
+
 def create_brainrot_keyboard(user_id, page=0, items_per_page=8):
     """Создает клавиатуру для выбора брейнрота с пагинацией"""
     if user_id not in user_data or not user_data[user_id]["inventory"]:
@@ -371,6 +380,9 @@ def create_brainrot_keyboard(user_id, page=0, items_per_page=8):
     
     if nav_buttons:
         keyboard.row(*nav_buttons)
+    
+    # Кнопка возврата к выбору действия
+    keyboard.add(types.InlineKeyboardButton("↩️ Назад к выбору действия", callback_data="back_to_action"))
     
     return keyboard
 
@@ -444,25 +456,23 @@ def start_battle(message):
         "boss": selected_boss,
         "boss_power": boss_info["power"],
         "reward": boss_info["reward"],
-        "timestamp": time.time()
+        "timestamp": time.time(),
+        "stage": "action_selection"  # Стадия выбора действия
     }
     
-    # Создаем сообщение о битве
+    # Создаем сообщение о битве с выбором действия
     battle_message = (
         f"⚔️ *БИТВА С БОССОМ!* ⚔️\n\n"
         f"🧌 *Босс:* {selected_boss}\n"
         f"📊 *Уровень:* {boss_info['level']}\n"
         f"💪 *Сила:* {boss_info['power']}⚔\n"
         f"📝 *Описание:* {boss_info['description']}\n\n"
-        f"Выбери брейнрота для битвы:"
+        f"Выбери действие:"
     )
     
-    # Создаем клавиатуру с брейнротами
-    keyboard = create_brainrot_keyboard(user_id)
-    if keyboard:
-        bot.send_message(message.chat.id, battle_message, parse_mode='Markdown', reply_markup=keyboard)
-    else:
-        bot.reply_to(message, "❌ Не удалось создать список брейнротов.")
+    # Создаем клавиатуру с выбором действия
+    keyboard = create_action_keyboard()
+    bot.send_message(message.chat.id, battle_message, parse_mode='Markdown', reply_markup=keyboard)
 
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback(call):
@@ -482,6 +492,107 @@ def handle_callback(call):
                 )
             except:
                 pass
+        bot.answer_callback_query(call.id)
+        
+    elif data == 'back_to_action':
+        # Возврат к выбору действия
+        if user_id not in user_battles:
+            bot.answer_callback_query(call.id, "❌ Битва устарела! Начни новую с помощью /battle")
+            return
+        
+        battle_info = user_battles[user_id]
+        boss_name = battle_info["boss"]
+        boss_info = bosses[boss_name]
+        
+        battle_message = (
+            f"⚔️ *БИТВА С БОССОМ!* ⚔️\n\n"
+            f"🧌 *Босс:* {boss_name}\n"
+            f"📊 *Уровень:* {boss_info['level']}\n"
+            f"💪 *Сила:* {boss_info['power']}⚔\n"
+            f"📝 *Описание:* {boss_info['description']}\n\n"
+            f"Выбери действие:"
+        )
+        
+        keyboard = create_action_keyboard()
+        try:
+            bot.edit_message_text(
+                battle_message,
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                parse_mode='Markdown',
+                reply_markup=keyboard
+            )
+        except:
+            pass
+        bot.answer_callback_query(call.id)
+        
+    elif data == 'action_attack':
+        # Пользователь выбрал атаковать
+        if user_id not in user_battles:
+            bot.answer_callback_query(call.id, "❌ Битва устарела! Начни новую с помощью /battle")
+            return
+        
+        # Обновляем стадию битвы
+        user_battles[user_id]["stage"] = "brainrot_selection"
+        
+        battle_info = user_battles[user_id]
+        boss_name = battle_info["boss"]
+        boss_info = bosses[boss_name]
+        
+        battle_message = (
+            f"⚔️ *БИТВА С БОССОМ!* ⚔️\n\n"
+            f"🧌 *Босс:* {boss_name}\n"
+            f"📊 *Уровень:* {boss_info['level']}\n"
+            f"💪 *Сила:* {boss_info['power']}⚔\n\n"
+            f"Выбери брейнрота для атаки:"
+        )
+        
+        # Создаем клавиатуру с брейнротами
+        keyboard = create_brainrot_keyboard(user_id)
+        if keyboard:
+            try:
+                bot.edit_message_text(
+                    battle_message,
+                    chat_id=call.message.chat.id,
+                    message_id=call.message.message_id,
+                    parse_mode='Markdown',
+                    reply_markup=keyboard
+                )
+            except:
+                pass
+        else:
+            bot.answer_callback_query(call.id, "❌ Нет доступных брейнротов!")
+        bot.answer_callback_query(call.id)
+        
+    elif data == 'action_surrender':
+        # Пользователь выбрал сдаться
+        if user_id not in user_battles:
+            bot.answer_callback_query(call.id, "❌ Битва устарела! Начни новую с помощью /battle")
+            return
+        
+        # Удаляем информацию о битве
+        del user_battles[user_id]
+        
+        # Обновляем кулдаун
+        user_battle_cooldowns[user_id] = time.time()
+        
+        surrender_message = (
+            f"🏳️ *ВЫ СДАЛИСЬ!* 🏳️\n\n"
+            f"Вы решили не сражаться с боссом.\n\n"
+            f"💡 *Совет:* В следующий раз попробуй атаковать - победа приносит награды!\n"
+            f"⏰ *Следующая битва через 10 минут*"
+        )
+        
+        try:
+            bot.edit_message_text(
+                surrender_message,
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                parse_mode='Markdown'
+            )
+        except:
+            bot.send_message(call.message.chat.id, surrender_message, parse_mode='Markdown')
+        
         bot.answer_callback_query(call.id)
         
     elif data.startswith('select_'):
