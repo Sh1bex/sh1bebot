@@ -197,7 +197,8 @@ brainrots = {
     "Kioskino Girafelelenio(IT)": 1.2,
     "Meterito Bearito": 1.0,
     "Sovieto Elephino": 0.9,
-    "Kravilino Čekićino": 1.1
+    "Kravilino Čekićino": 1.1,
+    "67 SixSeven Omg Omg": 0.1
 }
 
 # База данных боссов
@@ -1004,3 +1005,4 @@ if __name__ == "__main__":
         bot.infinity_polling()
     except Exception as e:
         print(f"❌ Ошибка при работе бота: {e}")
+
