@@ -1,0 +1,46 @@
+{
+  "total_battles": 1,
+  "total_victories": 1,
+  "total_defeats": 0,
+  "total_surrenders": 0,
+  "boss_stats": {
+    "Слабый босс": {
+      "encounters": 0,
+      "victories": 0,
+      "defeats": 0
+    },
+    "Обычный босс": {
+      "encounters": 1,
+      "victories": 1,
+      "defeats": 0
+    },
+    "Сильный босс": {
+      "encounters": 0,
+      "victories": 0,
+      "defeats": 0
+    },
+    "Эпический босс": {
+      "encounters": 0,
+      "victories": 0,
+      "defeats": 0
+    },
+    "Легендарный босс": {
+      "encounters": 0,
+      "victories": 0,
+      "defeats": 0
+    },
+    "Божественный босс": {
+      "encounters": 0,
+      "victories": 0,
+      "defeats": 0
+    }
+  },
+  "user_stats": {
+    "1560517157": {
+      "total_battles": 1,
+      "victories": 1,
+      "defeats": 0,
+      "surrenders": 0
+    }
+  }
+}
